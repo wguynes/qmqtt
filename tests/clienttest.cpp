@@ -214,7 +214,7 @@ TEST_F(ClientTest, setAutoReconnectIntervalSetsNetworkAutoReconnectInterval_Test
 TEST_F(ClientTest, autoReconnectIntervalIsValueOfNetworkAutoReconnect_Test)
 {
     EXPECT_CALL(*_networkMock, autoReconnectInterval()).WillOnce(Return(10000));
-    EXPECT_TRUE(_client->autoReconnectInterval());
+    EXPECT_EQ(10000, _client->autoReconnectInterval());
 }
 
 TEST_F(ClientTest, willTopicDefaultsToNull_Test)

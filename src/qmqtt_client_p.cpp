@@ -74,8 +74,6 @@ void QMQTT::ClientPrivate::init(const QHostAddress& host, const quint16 port, Ne
         _network.reset(network);
     }
 
-    convertSocketErrorToClientError();
-
     QObject::connect(&_timer, &QTimer::timeout, q, &Client::onTimerPingReq);
     QObject::connect(_network.data(), &Network::stateChanged,
                      q, &Client::onNetworkStateChanged);
@@ -87,62 +85,6 @@ void QMQTT::ClientPrivate::init(const QHostAddress& host, const quint16 port, Ne
                      q, &Client::onNetworkReceived);
     QObject::connect(_network.data(), &Network::error,
                      q, &Client::onNetworkError);
-}
-
-QMQTT::ClientError QMQTT::ClientPrivate::convertSocketErrorToClientError(const QAbstractSocket::SocketError socketError) const
-{
-    switch(socketError)
-    {
-    case QAbstractSocket::ConnectionRefusedError:
-        return SocketConnectionRefusedError;
-    case QAbstractSocket::RemoteHostClosedError:
-        return SocketRemoteHostClosedError;
-    case QAbstractSocket::HostNotFoundError:
-        return SocketHostNotFoundError;
-    case QAbstractSocket::SocketAccessError:
-        return SocketAccessError;
-    case QAbstractSocket::SocketResourceError:
-        return SocketResourceError;
-    case QAbstractSocket::SocketTimeoutError:
-        return SocketTimeoutError;
-    case QAbstractSocket::DatagramTooLargeError:
-        return SocketDatagramTooLargeError;
-    case QAbstractSocket::NetworkError:
-        return SocketNetworkError;
-    case QAbstractSocket::AddressInUseError:
-        return SocketAddressInUseError;
-    case QAbstractSocket::SocketAddressNotAvailableError:
-        return SocketAddressNotAvailableError;
-    case QAbstractSocket::UnsupportedSocketOperationError:
-        return SocketUnsupportedSocketOperationError;
-    case QAbstractSocket::UnfinishedSocketOperationError:
-        return SocketUnfinishedSocketOperationError;
-    case QAbstractSocket::ProxyAuthenticationRequiredError:
-        return SocketProxyAuthenticationRequiredError;
-    case QAbstractSocket::SslHandshakeFailedError:
-        return SocketSslHandshakeFailedError;
-    case QAbstractSocket::ProxyConnectionRefusedError:
-        return SocketProxyConnectionRefusedError;
-    case QAbstractSocket::ProxyConnectionClosedError:
-        return SocketProxyConnectionClosedError;
-    case QAbstractSocket::ProxyConnectionTimeoutError:
-        return SocketProxyConnectionTimeoutError;
-    case QAbstractSocket::ProxyNotFoundError:
-        return SocketProxyNotFoundError;
-    case QAbstractSocket::ProxyProtocolError:
-        return SocketProxyProtocolError;
-    case QAbstractSocket::OperationError:
-        return SocketOperationError;
-    case QAbstractSocket::SslInternalError:
-        return SocketSslInternalError;
-    case QAbstractSocket::SslInvalidUserDataError:
-        return SocketSslInvalidUserDataError;
-    case QAbstractSocket::TemporaryError:
-        return SocketTemporaryError;
-    default:
-        break;
-    }
-    return UnknownError;
 }
 
 void QMQTT::ClientPrivate::connectToHost()
@@ -421,7 +363,7 @@ void QMQTT::ClientPrivate::setAutoReconnect(const bool autoReconnect)
     _network->setAutoReconnect(autoReconnect);
 }
 
-bool QMQTT::ClientPrivate::autoReconnectInterval() const
+int QMQTT::ClientPrivate::autoReconnectInterval() const
 {
     return _network->autoReconnectInterval();
 }
@@ -609,3 +551,60 @@ QMQTT::ClientConnectionState QMQTT::ClientPrivate::convertSocketStateToClientSta
     }
     return clientState;
 }
+
+QMQTT::ClientError QMQTT::ClientPrivate::convertSocketErrorToClientError(const QAbstractSocket::SocketError socketError) const
+{
+    switch(socketError)
+    {
+    case QAbstractSocket::ConnectionRefusedError:
+        return SocketConnectionRefusedError;
+    case QAbstractSocket::RemoteHostClosedError:
+        return SocketRemoteHostClosedError;
+    case QAbstractSocket::HostNotFoundError:
+        return SocketHostNotFoundError;
+    case QAbstractSocket::SocketAccessError:
+        return SocketAccessError;
+    case QAbstractSocket::SocketResourceError:
+        return SocketResourceError;
+    case QAbstractSocket::SocketTimeoutError:
+        return SocketTimeoutError;
+    case QAbstractSocket::DatagramTooLargeError:
+        return SocketDatagramTooLargeError;
+    case QAbstractSocket::NetworkError:
+        return SocketNetworkError;
+    case QAbstractSocket::AddressInUseError:
+        return SocketAddressInUseError;
+    case QAbstractSocket::SocketAddressNotAvailableError:
+        return SocketAddressNotAvailableError;
+    case QAbstractSocket::UnsupportedSocketOperationError:
+        return SocketUnsupportedSocketOperationError;
+    case QAbstractSocket::UnfinishedSocketOperationError:
+        return SocketUnfinishedSocketOperationError;
+    case QAbstractSocket::ProxyAuthenticationRequiredError:
+        return SocketProxyAuthenticationRequiredError;
+    case QAbstractSocket::SslHandshakeFailedError:
+        return SocketSslHandshakeFailedError;
+    case QAbstractSocket::ProxyConnectionRefusedError:
+        return SocketProxyConnectionRefusedError;
+    case QAbstractSocket::ProxyConnectionClosedError:
+        return SocketProxyConnectionClosedError;
+    case QAbstractSocket::ProxyConnectionTimeoutError:
+        return SocketProxyConnectionTimeoutError;
+    case QAbstractSocket::ProxyNotFoundError:
+        return SocketProxyNotFoundError;
+    case QAbstractSocket::ProxyProtocolError:
+        return SocketProxyProtocolError;
+    case QAbstractSocket::OperationError:
+        return SocketOperationError;
+    case QAbstractSocket::SslInternalError:
+        return SocketSslInternalError;
+    case QAbstractSocket::SslInvalidUserDataError:
+        return SocketSslInvalidUserDataError;
+    case QAbstractSocket::TemporaryError:
+        return SocketTemporaryError;
+    default:
+        break;
+    }
+    return UnknownError;
+}
+

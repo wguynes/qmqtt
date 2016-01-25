@@ -72,7 +72,6 @@ protected slots:
     void onSocketError(QAbstractSocket::SocketError socketError);
     void onSocketDisconnected();
     void onSocketReadReady();
-    void onSocketStateChanged(QAbstractSocket::SocketState state);
     void connectToHost();
 
 protected:
@@ -83,7 +82,6 @@ protected:
     QHostAddress _host;
     QBuffer _buffer;
     bool _autoReconnect;
-    int _autoReconnectInterval;
     SocketInterface* _socket;
     TimerInterface* _autoReconnectTimer;
 

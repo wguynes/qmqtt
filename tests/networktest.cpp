@@ -62,7 +62,6 @@ public:
 TEST_F(NetworkTest, networkConstructorDefaultValues_Test)
 {
     EXPECT_FALSE(_network->autoReconnect());
-    EXPECT_EQ(5000, _network->autoReconnectInterval());
 }
 
 TEST_F(NetworkTest, networkIsConnectedReturnsFalseWhenSocketStateIsUnconnectedState_Test)
@@ -244,4 +243,16 @@ TEST_F(NetworkTest, networkWillEmitErrorOnSocketError_Test)
     EXPECT_EQ(1, spy.count());
     EXPECT_EQ(QAbstractSocket::ConnectionRefusedError,
               spy.at(0).at(0).value<QAbstractSocket::SocketError>());
+}
+
+TEST_F(NetworkTest, networkAutoReconnectIntervalCallsAutoReconnectTimerInterval_Test)
+{
+    EXPECT_CALL(*_timerMock, interval()).WillOnce(Return(10000));
+    EXPECT_EQ(10000, _network->autoReconnectInterval());
+}
+
+TEST_F(NetworkTest, networkSetAutoReconnectIntervalCallsAutoReconnectTimerSetInterval_Test)
+{
+    EXPECT_CALL(*_timerMock, setInterval(10000));
+    _network->setAutoReconnectInterval(10000);
 }

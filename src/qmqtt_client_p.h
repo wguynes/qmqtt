@@ -87,7 +87,7 @@ public:
     void handlePuback(const quint8 type, const quint16 msgid);
     bool autoReconnect() const;
     void setAutoReconnect(const bool autoReconnect);
-    bool autoReconnectInterval() const;
+    int autoReconnectInterval() const;
     void setAutoReconnectInterval(const int autoReconnectInterval);
     bool isConnectedToHost() const;
     ClientConnectionState connectionState() const;
@@ -113,12 +113,11 @@ public:
     quint8 willQos() const;
     bool willRetain() const;
     QString willMessage() const;
-    ClientError convertSocketErrorToClientError(const QAbstractSocket::SocketError socketError) const;
-    void convertSocketErrorToClientError();
     void onNetworkError(QAbstractSocket::SocketError error);
     void onNetworkStateChanged(QAbstractSocket::SocketState networkState);
     void onNetworkConnected();
     void onNetworkDisconnected();
+    ClientError convertSocketErrorToClientError(const QAbstractSocket::SocketError socketError) const;
     ClientConnectionState convertSocketStateToClientState(QAbstractSocket::SocketState socketState) const;
 
     Q_DECLARE_PUBLIC(Client)

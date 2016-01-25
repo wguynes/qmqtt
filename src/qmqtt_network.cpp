@@ -44,7 +44,6 @@ QMQTT::Network::Network(QObject* parent)
     , _port(DEFAULT_PORT)
     , _host(DEFAULT_HOST)
     , _autoReconnect(DEFAULT_AUTORECONNECT)
-    , _autoReconnectInterval(DEFAULT_AUTORECONNECT_INTERVAL_MS)
     , _socket(new QMQTT::Socket)
     , _autoReconnectTimer(new QMQTT::Timer)
 {
@@ -57,7 +56,6 @@ QMQTT::Network::Network(SocketInterface* socketInterface, TimerInterface* timerI
     , _port(DEFAULT_PORT)
     , _host(DEFAULT_HOST)
     , _autoReconnect(DEFAULT_AUTORECONNECT)
-    , _autoReconnectInterval(DEFAULT_AUTORECONNECT_INTERVAL_MS)
     , _socket(socketInterface)
     , _autoReconnectTimer(timerInterface)
 {
@@ -68,11 +66,12 @@ void QMQTT::Network::initialize()
 {
     _socket->setParent(this);
     _autoReconnectTimer->setParent(this);
+    _autoReconnectTimer->setInterval(DEFAULT_AUTORECONNECT_INTERVAL_MS);
     _buffer.open(QIODevice::ReadWrite);
 
-    QObject::connect(_socket, &SocketInterface::connected, this, &Network::connected);
+    QObject::connect(_socket, &SocketInterface::connected, this, &NetworkInterface::connected);
     QObject::connect(_socket, &SocketInterface::disconnected, this, &Network::onSocketDisconnected);
-    QObject::connect(_socket, &SocketInterface::stateChanged, this, &Network::onSocketStateChanged);
+    QObject::connect(_socket, &SocketInterface::stateChanged, this, &NetworkInterface::stateChanged);
     QObject::connect(_socket, &SocketInterface::readyRead, this, &Network::onSocketReadReady);
     QObject::connect(
         _autoReconnectTimer, &TimerInterface::timeout,
@@ -143,12 +142,12 @@ void QMQTT::Network::setAutoReconnect(const bool autoReconnect)
 
 int QMQTT::Network::autoReconnectInterval() const
 {
-    return _autoReconnectInterval;
+    return _autoReconnectTimer->interval();
 }
 
 void QMQTT::Network::setAutoReconnectInterval(const int autoReconnectInterval)
 {
-    _autoReconnectInterval = autoReconnectInterval;
+    _autoReconnectTimer->setInterval(autoReconnectInterval);
 }
 
 void QMQTT::Network::onSocketReadReady()
@@ -195,11 +194,6 @@ int QMQTT::Network::readRemainingLength(QDataStream &in)
      } while ((byte & 128) != 0);
 
      return length;
-}
-
-void QMQTT::Network::onSocketStateChanged(QAbstractSocket::SocketState socketState)
-{
-    emit stateChanged(socketState);
 }
 
 void QMQTT::Network::onSocketDisconnected()
