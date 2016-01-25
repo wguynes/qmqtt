@@ -55,12 +55,12 @@ static const quint8 PROTOCOL_VERSION_MINOR = 1;
 static const quint8 PROTOCOL_VERSION_REVISION = 1;
 //static const char* PROTOCOL_VERSION = "MQTT/3.1";
 
-enum ConnectionState
+enum ClientConnectionState
 {
-    STATE_INIT = 0,
-    STATE_CONNECTING,
-    STATE_CONNECTED,
-    STATE_DISCONNECTED
+    UnconnectedState = 0,
+    ConnectingState,
+    ConnectedState,
+    ClosingState
 };
 
 enum ClientError
@@ -136,7 +136,7 @@ public:
     bool cleanSession() const;
     bool autoReconnect() const;
     int autoReconnectInterval() const;
-    ConnectionState connectionState() const;
+    ClientConnectionState connectionState() const;
     QString willTopic() const;
     quint8 willQos() const;
     bool willRetain() const;
@@ -171,6 +171,7 @@ signals:
     void connected();
     void disconnected();
     void error(const QMQTT::ClientError error);
+    void connectionStateChanged(const QMQTT::ClientConnectionState state);
 
     // todo: should emit on server suback (or is that only at specific QoS levels?)
     void subscribed(const QString& topic);
@@ -182,11 +183,12 @@ signals:
     void received(const QMQTT::Message& message);
 
 protected slots:
-    void onNetworkConnected();
-    void onNetworkDisconnected();
     void onNetworkReceived(const QMQTT::Frame& frame);
     void onTimerPingReq();
     void onNetworkError(QAbstractSocket::SocketError error);
+    void onNetworkStateChanged(QAbstractSocket::SocketState socketState);
+    void onNetworkConnected();
+    void onNetworkDisconnected();
 
 protected:
     QScopedPointer<ClientPrivate> d_ptr;

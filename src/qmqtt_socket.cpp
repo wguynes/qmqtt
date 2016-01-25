@@ -36,9 +36,9 @@ QMQTT::Socket::Socket(QObject* parent)
     : SocketInterface(parent)
     , _socket(new QTcpSocket)
 {
-    connect(_socket.data(), &QTcpSocket::stateChanged, this, &Socket::onStateChanged);
-    connect(_socket.data(), &QTcpSocket::connected,    this, &SocketInterface::connected);
+    connect(_socket.data(), &QTcpSocket::connected, this, &SocketInterface::connected);
     connect(_socket.data(), &QTcpSocket::disconnected, this, &SocketInterface::disconnected);
+    connect(_socket.data(), &QTcpSocket::stateChanged, this, &Socket::onStateChanged);
     connect(_socket.data(), &QTcpSocket::readyRead,    this, &SocketInterface::readyRead);
     connect(_socket.data(),
             static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error),
@@ -97,9 +97,9 @@ qint64 QMQTT::Socket::writeData(const char* data, qint64 len)
 
 void QMQTT::Socket::onStateChanged(QAbstractSocket::SocketState state)
 {
-    Q_UNUSED(state);
     if(openMode() != _socket->openMode())
     {
         setOpenMode(_socket->openMode());
     }
+    emit stateChanged(state);
 }

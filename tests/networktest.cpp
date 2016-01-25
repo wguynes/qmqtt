@@ -23,10 +23,7 @@ public:
         _byteArray.clear();
         _socketMock = new SocketMock;
         _timerMock = new TimerMock;
-//        EXPECT_CALL(*_timerMock, setSingleShot(_)).WillRepeatedly(Return());
-//        EXPECT_CALL(*_timerMock, setInterval(_)).WillRepeatedly(Return());
         _network.reset(new QMQTT::Network(_socketMock, _timerMock));
-//        Mock::VerifyAndClearExpectations(_socketMock);
     }
 
     void TearDown()
@@ -132,6 +129,24 @@ TEST_F(NetworkTest, networkSendFrameWillSendAFrameIfConnected_Test)
 
     QMQTT::Frame frame;
     _network->sendFrame(frame);
+}
+
+TEST_F(NetworkTest, networkEmitsStateChangedConnectedSignalWhenSocketEmitsStateChangedConnectedSignal_Test)
+{
+    QSignalSpy spy(_network.data(), &QMQTT::Network::stateChanged);
+    emit _socketMock->stateChanged(QAbstractSocket::ConnectedState);
+    EXPECT_EQ(1, spy.count());
+    EXPECT_EQ(QAbstractSocket::ConnectedState,
+              spy.at(0).at(0).value<QAbstractSocket::SocketState>());
+}
+
+TEST_F(NetworkTest, networkEmitsStateChangedDisconnectedSignalWhenSocketEmitsStateChangedDisconnectedSignal_Test)
+{
+    QSignalSpy spy(_network.data(), &QMQTT::Network::stateChanged);
+    emit _socketMock->stateChanged(QAbstractSocket::UnconnectedState);
+    EXPECT_EQ(1, spy.count());
+    EXPECT_EQ(QAbstractSocket::UnconnectedState,
+              spy.at(0).at(0).value<QAbstractSocket::SocketState>());
 }
 
 TEST_F(NetworkTest, networkEmitsConnectedSignalWhenSocketEmitsConnectedSignal_Test)

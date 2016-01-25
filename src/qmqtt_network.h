@@ -70,6 +70,10 @@ public slots:
 
 protected slots:
     void onSocketError(QAbstractSocket::SocketError socketError);
+    void onSocketDisconnected();
+    void onSocketReadReady();
+    void onSocketStateChanged(QAbstractSocket::SocketState state);
+    void connectToHost();
 
 protected:
     void initialize();
@@ -82,11 +86,6 @@ protected:
     int _autoReconnectInterval;
     SocketInterface* _socket;
     TimerInterface* _autoReconnectTimer;
-
-protected slots:
-    void onSocketReadReady();
-    void onDisconnected();
-    void connectToHost();
 
 private:
     Q_DISABLE_COPY(Network)

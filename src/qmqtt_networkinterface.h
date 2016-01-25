@@ -61,6 +61,7 @@ public slots:
 signals:
     void connected();
     void disconnected();
+    void stateChanged(QAbstractSocket::SocketState state);
     void received(const QMQTT::Frame& frame);
     void error(QAbstractSocket::SocketError error);
 };

@@ -62,6 +62,7 @@ signals:
     void disconnected();
     void readyRead();
     void error(QAbstractSocket::SocketError socketError);
+    void stateChanged(QAbstractSocket::SocketState socketState);
 };
 
 }

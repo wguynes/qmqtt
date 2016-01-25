@@ -78,36 +78,86 @@ TEST_F(SocketTest, disconnectFromHostDisconnectsTcpConnection_Test)
     EXPECT_EQ(1, spy.count());
 }
 
-TEST_F(SocketTest, tcpConnectionEmitsConnectedSignal_Test)
+
+
+
+
+
+
+TEST_F(SocketTest, tcpConnectionEmitsStateChangedSignal_Test)
 {
-    QSignalSpy spy(_socket.data(), &QMQTT::Socket::connected);
+    QSignalSpy spy(_socket.data(), &QMQTT::SocketInterface::stateChanged);
 
     createAndConnectToServer();
+
+    ASSERT_LE(1, spy.count());
+    EXPECT_EQ(QAbstractSocket::ConnectedState,
+              spy.at(spy.count()-1).at(0).value<QAbstractSocket::SocketState>());
+}
+
+TEST_F(SocketTest, tcpDisconnectionEmitsStateChangedSignal_Test)
+{
+    QSignalSpy spy(_socket.data(), &QMQTT::SocketInterface::stateChanged);
+    createAndConnectToServer();
+    ASSERT_LE(1, spy.count());
+    ASSERT_EQ(QAbstractSocket::ConnectedState,
+              spy.at(spy.count()-1).at(0).value<QAbstractSocket::SocketState>());
+    spy.clear();
+
+    _socket->disconnectFromHost();
     flushEvents();
 
-    EXPECT_EQ(1, spy.count());
+    ASSERT_LE(1, spy.count());
+    EXPECT_EQ(QAbstractSocket::UnconnectedState,
+              spy.at(spy.count()-1).at(0).value<QAbstractSocket::SocketState>());
+}
+
+TEST_F(SocketTest, remoteDisconnectionEmitsStateChangedSignal_Test)
+{
+    QSignalSpy spy(_socket.data(), &QMQTT::SocketInterface::stateChanged);
+    QSharedPointer<TcpServer> server = createAndConnectToServer();
+    ASSERT_LE(1, spy.count());
+    ASSERT_EQ(QAbstractSocket::ConnectedState,
+              spy.at(spy.count()-1).at(0).value<QAbstractSocket::SocketState>());
+    spy.clear();
+
+    server->socket()->disconnectFromHost();
+    flushEvents();
+
+    ASSERT_LE(1, spy.count());
+    EXPECT_EQ(QAbstractSocket::UnconnectedState,
+              spy.at(spy.count()-1).at(0).value<QAbstractSocket::SocketState>());
+}
+
+TEST_F(SocketTest, tcpConnectionEmitsConnectedSignal_Test)
+{
+    QSignalSpy spy(_socket.data(), &QMQTT::SocketInterface::connected);
+
+    createAndConnectToServer();
+
+    ASSERT_EQ(1, spy.count());
 }
 
 TEST_F(SocketTest, tcpDisconnectionEmitsDisconnectedSignal_Test)
 {
     createAndConnectToServer();
-    QSignalSpy spy(_socket.data(), &QMQTT::Socket::disconnected);
+    QSignalSpy spy(_socket.data(), &QMQTT::SocketInterface::disconnected);
 
     _socket->disconnectFromHost();
     flushEvents();
 
-    EXPECT_EQ(1, spy.count());
+    ASSERT_EQ(1, spy.count());
 }
 
 TEST_F(SocketTest, remoteDisconnectionEmitsDisconnectedSignal_Test)
 {
     QSharedPointer<TcpServer> server = createAndConnectToServer();
-    QSignalSpy spy(_socket.data(), &QMQTT::Socket::disconnected);
 
+    QSignalSpy spy(_socket.data(), &QMQTT::SocketInterface::disconnected);
     server->socket()->disconnectFromHost();
     flushEvents();
 
-    EXPECT_EQ(1, spy.count());
+    ASSERT_EQ(1, spy.count());
 }
 
 TEST_F(SocketTest, connectedSocketShowsConnectedState_Test)

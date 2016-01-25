@@ -71,7 +71,8 @@ void QMQTT::Network::initialize()
     _buffer.open(QIODevice::ReadWrite);
 
     QObject::connect(_socket, &SocketInterface::connected, this, &Network::connected);
-    QObject::connect(_socket, &SocketInterface::disconnected, this, &Network::onDisconnected);
+    QObject::connect(_socket, &SocketInterface::disconnected, this, &Network::onSocketDisconnected);
+    QObject::connect(_socket, &SocketInterface::stateChanged, this, &Network::onSocketStateChanged);
     QObject::connect(_socket, &SocketInterface::readyRead, this, &Network::onSocketReadReady);
     QObject::connect(
         _autoReconnectTimer, &TimerInterface::timeout,
@@ -196,9 +197,15 @@ int QMQTT::Network::readRemainingLength(QDataStream &in)
      return length;
 }
 
-void QMQTT::Network::onDisconnected()
+void QMQTT::Network::onSocketStateChanged(QAbstractSocket::SocketState socketState)
+{
+    emit stateChanged(socketState);
+}
+
+void QMQTT::Network::onSocketDisconnected()
 {
     emit disconnected();
+
     if(_autoReconnect)
     {
         _autoReconnectTimer->start();

@@ -214,7 +214,7 @@ void QMQTT::Client::setWillMessage(const QString& willMessage)
     d->setWillMessage(willMessage);
 }
 
-QMQTT::ConnectionState QMQTT::Client::connectionState() const
+QMQTT::ClientConnectionState QMQTT::Client::connectionState() const
 {
     Q_D(const Client);
     return d->connectionState();
@@ -230,12 +230,6 @@ void QMQTT::Client::connectToHost()
 {
     Q_D(Client);
     d->connectToHost();
-}
-
-void QMQTT::Client::onNetworkConnected()
-{    
-    Q_D(Client);
-    d->onNetworkConnected();
 }
 
 quint16 QMQTT::Client::publish(const Message& message)
@@ -274,14 +268,26 @@ void QMQTT::Client::onNetworkReceived(const QMQTT::Frame& frame)
     d->onNetworkReceived(frame);
 }
 
-void QMQTT::Client::onNetworkDisconnected()
-{
-    Q_D(Client);
-    d->onNetworkDisconnected();
-}
-
 void QMQTT::Client::onNetworkError(QAbstractSocket::SocketError error)
 {
     Q_D(Client);
     d->onNetworkError(error);
+}
+
+void QMQTT::Client::onNetworkStateChanged(QAbstractSocket::SocketState socketState)
+{
+    Q_D(Client);
+    d->onNetworkStateChanged(socketState);
+}
+
+void QMQTT::Client::onNetworkConnected()
+{
+    Q_D(Client);
+    d->onNetworkConnected();
+}
+
+void QMQTT::Client::onNetworkDisconnected()
+{
+    Q_D(Client);
+    d->onNetworkDisconnected();
 }

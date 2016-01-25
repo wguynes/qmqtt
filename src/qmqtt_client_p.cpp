@@ -49,7 +49,6 @@ QMQTT::ClientPrivate::ClientPrivate(Client* qq_ptr)
     , _clientId(QUuid::createUuid().toString())
     , _cleanSession(false)
     , _keepAlive(300)
-    , _connectionState(STATE_INIT)
     , _willQos(0)
     , _willRetain(false)
     , q_ptr(qq_ptr)
@@ -75,9 +74,11 @@ void QMQTT::ClientPrivate::init(const QHostAddress& host, const quint16 port, Ne
         _network.reset(network);
     }
 
-    initializeErrorHash();
+    convertSocketErrorToClientError();
 
     QObject::connect(&_timer, &QTimer::timeout, q, &Client::onTimerPingReq);
+    QObject::connect(_network.data(), &Network::stateChanged,
+                     q, &Client::onNetworkStateChanged);
     QObject::connect(_network.data(), &Network::connected,
                      q, &Client::onNetworkConnected);
     QObject::connect(_network.data(), &Network::disconnected,
@@ -88,44 +89,65 @@ void QMQTT::ClientPrivate::init(const QHostAddress& host, const quint16 port, Ne
                      q, &Client::onNetworkError);
 }
 
-void QMQTT::ClientPrivate::initializeErrorHash()
+QMQTT::ClientError QMQTT::ClientPrivate::convertSocketErrorToClientError(const QAbstractSocket::SocketError socketError) const
 {
-    _socketErrorHash.insert(QAbstractSocket::ConnectionRefusedError, SocketConnectionRefusedError);
-    _socketErrorHash.insert(QAbstractSocket::RemoteHostClosedError, SocketRemoteHostClosedError);
-    _socketErrorHash.insert(QAbstractSocket::HostNotFoundError, SocketHostNotFoundError);
-    _socketErrorHash.insert(QAbstractSocket::SocketAccessError, SocketAccessError);
-    _socketErrorHash.insert(QAbstractSocket::SocketResourceError, SocketResourceError);
-    _socketErrorHash.insert(QAbstractSocket::SocketTimeoutError, SocketTimeoutError);
-    _socketErrorHash.insert(QAbstractSocket::DatagramTooLargeError, SocketDatagramTooLargeError);
-    _socketErrorHash.insert(QAbstractSocket::NetworkError, SocketNetworkError);
-    _socketErrorHash.insert(QAbstractSocket::AddressInUseError, SocketAddressInUseError);
-    _socketErrorHash.insert(QAbstractSocket::SocketAddressNotAvailableError, SocketAddressNotAvailableError);
-    _socketErrorHash.insert(QAbstractSocket::UnsupportedSocketOperationError, SocketUnsupportedSocketOperationError);
-    _socketErrorHash.insert(QAbstractSocket::UnfinishedSocketOperationError, SocketUnfinishedSocketOperationError);
-    _socketErrorHash.insert(QAbstractSocket::ProxyAuthenticationRequiredError, SocketProxyAuthenticationRequiredError);
-    _socketErrorHash.insert(QAbstractSocket::SslHandshakeFailedError, SocketSslHandshakeFailedError);
-    _socketErrorHash.insert(QAbstractSocket::ProxyConnectionRefusedError, SocketProxyConnectionRefusedError);
-    _socketErrorHash.insert(QAbstractSocket::ProxyConnectionClosedError, SocketProxyConnectionClosedError);
-    _socketErrorHash.insert(QAbstractSocket::ProxyConnectionTimeoutError, SocketProxyConnectionTimeoutError);
-    _socketErrorHash.insert(QAbstractSocket::ProxyNotFoundError, SocketProxyNotFoundError);
-    _socketErrorHash.insert(QAbstractSocket::ProxyProtocolError, SocketProxyProtocolError);
-    _socketErrorHash.insert(QAbstractSocket::OperationError, SocketOperationError);
-    _socketErrorHash.insert(QAbstractSocket::SslInternalError, SocketSslInternalError);
-    _socketErrorHash.insert(QAbstractSocket::SslInvalidUserDataError, SocketSslInvalidUserDataError);
-    _socketErrorHash.insert(QAbstractSocket::TemporaryError, SocketTemporaryError);
+    switch(socketError)
+    {
+    case QAbstractSocket::ConnectionRefusedError:
+        return SocketConnectionRefusedError;
+    case QAbstractSocket::RemoteHostClosedError:
+        return SocketRemoteHostClosedError;
+    case QAbstractSocket::HostNotFoundError:
+        return SocketHostNotFoundError;
+    case QAbstractSocket::SocketAccessError:
+        return SocketAccessError;
+    case QAbstractSocket::SocketResourceError:
+        return SocketResourceError;
+    case QAbstractSocket::SocketTimeoutError:
+        return SocketTimeoutError;
+    case QAbstractSocket::DatagramTooLargeError:
+        return SocketDatagramTooLargeError;
+    case QAbstractSocket::NetworkError:
+        return SocketNetworkError;
+    case QAbstractSocket::AddressInUseError:
+        return SocketAddressInUseError;
+    case QAbstractSocket::SocketAddressNotAvailableError:
+        return SocketAddressNotAvailableError;
+    case QAbstractSocket::UnsupportedSocketOperationError:
+        return SocketUnsupportedSocketOperationError;
+    case QAbstractSocket::UnfinishedSocketOperationError:
+        return SocketUnfinishedSocketOperationError;
+    case QAbstractSocket::ProxyAuthenticationRequiredError:
+        return SocketProxyAuthenticationRequiredError;
+    case QAbstractSocket::SslHandshakeFailedError:
+        return SocketSslHandshakeFailedError;
+    case QAbstractSocket::ProxyConnectionRefusedError:
+        return SocketProxyConnectionRefusedError;
+    case QAbstractSocket::ProxyConnectionClosedError:
+        return SocketProxyConnectionClosedError;
+    case QAbstractSocket::ProxyConnectionTimeoutError:
+        return SocketProxyConnectionTimeoutError;
+    case QAbstractSocket::ProxyNotFoundError:
+        return SocketProxyNotFoundError;
+    case QAbstractSocket::ProxyProtocolError:
+        return SocketProxyProtocolError;
+    case QAbstractSocket::OperationError:
+        return SocketOperationError;
+    case QAbstractSocket::SslInternalError:
+        return SocketSslInternalError;
+    case QAbstractSocket::SslInvalidUserDataError:
+        return SocketSslInvalidUserDataError;
+    case QAbstractSocket::TemporaryError:
+        return SocketTemporaryError;
+    default:
+        break;
+    }
+    return UnknownError;
 }
 
 void QMQTT::ClientPrivate::connectToHost()
 {
     _network->connectToHost(_host, _port);
-}
-
-void QMQTT::ClientPrivate::onNetworkConnected()
-{
-    Q_Q(Client);
-    sendConnect();
-    startKeepAlive();
-    emit q->connected();
 }
 
 void QMQTT::ClientPrivate::sendConnect()
@@ -299,14 +321,6 @@ void QMQTT::ClientPrivate::unsubscribe(const QString& topic)
     emit q->unsubscribed(topic);
 }
 
-void QMQTT::ClientPrivate::onNetworkDisconnected()
-{
-    Q_Q(Client);
-
-    stopKeepAlive();
-    emit q->disconnected();
-}
-
 void QMQTT::ClientPrivate::onNetworkReceived(const QMQTT::Frame& frm)
 {
     QMQTT::Frame frame(frm);
@@ -422,9 +436,9 @@ bool QMQTT::ClientPrivate::isConnectedToHost() const
     return _network->isConnectedToHost();
 }
 
-QMQTT::ConnectionState QMQTT::ClientPrivate::connectionState() const
+QMQTT::ClientConnectionState QMQTT::ClientPrivate::connectionState() const
 {
-    return _connectionState;
+    return convertSocketStateToClientState(_network->state());
 }
 
 void QMQTT::ClientPrivate::setCleanSession(const bool cleanSession)
@@ -547,5 +561,51 @@ void QMQTT::ClientPrivate::setWillMessage(const QString& willMessage)
 void QMQTT::ClientPrivate::onNetworkError(QAbstractSocket::SocketError socketError)
 {
     Q_Q(Client);
-    emit q->error(_socketErrorHash.value(socketError, UnknownError));
+    emit q->error(convertSocketErrorToClientError(socketError));
+}
+
+void QMQTT::ClientPrivate::onNetworkStateChanged(QAbstractSocket::SocketState networkState)
+{
+    Q_Q(Client);
+    emit q->connectionStateChanged(convertSocketStateToClientState(networkState));
+}
+
+void QMQTT::ClientPrivate::onNetworkConnected()
+{
+    Q_Q(Client);
+
+    emit q->connected();
+    sendConnect();
+    startKeepAlive();
+}
+
+void QMQTT::ClientPrivate::onNetworkDisconnected()
+{
+    Q_Q(Client);
+
+    stopKeepAlive();
+    emit q->disconnected();
+}
+
+QMQTT::ClientConnectionState QMQTT::ClientPrivate::convertSocketStateToClientState(QAbstractSocket::SocketState socketState) const
+{
+    QMQTT::ClientConnectionState clientState = UnconnectedState;
+    switch(socketState)
+    {
+    case QAbstractSocket::HostLookupState: // fall through deliberate
+    case QAbstractSocket::ConnectingState:
+        clientState = ConnectingState;
+        break;
+    case QAbstractSocket::ConnectedState: // fall through deliberate
+    case QAbstractSocket::BoundState:
+        clientState = ConnectedState;
+        break;
+    case QAbstractSocket::ClosingState:
+        clientState = ClosingState;
+        break;
+    case QAbstractSocket::UnconnectedState: // fall through deliberate
+    default:
+        break;
+    }
+    return clientState;
 }

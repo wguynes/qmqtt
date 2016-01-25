@@ -55,14 +55,12 @@ public:
     QString _password;
     bool _cleanSession;
     int _keepAlive;
-    ConnectionState _connectionState;
     QScopedPointer<NetworkInterface> _network;
     QTimer _timer;
     QString _willTopic;
     quint8 _willQos;
     bool _willRetain;
     QString _willMessage;
-    QHash<QAbstractSocket::SocketError, ClientError> _socketErrorHash;
 
     Client* const q_ptr;
 
@@ -79,8 +77,6 @@ public:
     void disconnectFromHost();
     void startKeepAlive();
     void stopKeepAlive();
-    void onNetworkConnected();
-    void onNetworkDisconnected();
     quint16 publish(const Message& message);
     void puback(const quint8 type, const quint16 msgid);
     quint16 subscribe(const QString& topic, const quint8 qos);
@@ -94,7 +90,7 @@ public:
     bool autoReconnectInterval() const;
     void setAutoReconnectInterval(const int autoReconnectInterval);
     bool isConnectedToHost() const;
-    QMQTT::ConnectionState connectionState() const;
+    ClientConnectionState connectionState() const;
     void setCleanSession(const bool cleanSession);
     bool cleanSession() const;
     void setKeepAlive(const int keepAlive);
@@ -117,8 +113,13 @@ public:
     quint8 willQos() const;
     bool willRetain() const;
     QString willMessage() const;
-    void initializeErrorHash();
+    ClientError convertSocketErrorToClientError(const QAbstractSocket::SocketError socketError) const;
+    void convertSocketErrorToClientError();
     void onNetworkError(QAbstractSocket::SocketError error);
+    void onNetworkStateChanged(QAbstractSocket::SocketState networkState);
+    void onNetworkConnected();
+    void onNetworkDisconnected();
+    ClientConnectionState convertSocketStateToClientState(QAbstractSocket::SocketState socketState) const;
 
     Q_DECLARE_PUBLIC(Client)
 };

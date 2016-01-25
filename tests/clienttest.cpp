@@ -261,21 +261,13 @@ TEST_F(ClientTest, setWillMessageSetsAWillMessageTest)
     EXPECT_EQ("message", _client->willMessage());
 }
 
-TEST_F(ClientTest, connectionStateReturnsStateInit_Test)
+TEST_F(ClientTest, connectionStateCallsNetworkState_Test)
 {
-    EXPECT_EQ(QMQTT::STATE_INIT, _client->connectionState());
+    EXPECT_CALL(*_networkMock, state()).WillOnce(Return(QAbstractSocket::ConnectedState));
+    EXPECT_EQ(QMQTT::ConnectedState, _client->connectionState());
 }
 
-TEST_F(ClientTest, connectionStateReturnsStateInitEvenAfterConnected_Test)
-{
-    EXPECT_CALL(*_networkMock, sendFrame(_));
-
-    emit _networkMock->connected();
-
-    EXPECT_EQ(QMQTT::STATE_INIT, _client->connectionState());
-}
-
-TEST_F(ClientTest, connectSendsConnectMessage_Test)
+TEST_F(ClientTest, networkConnectedSignalSendsConnectMessage_Test)
 {
     QMQTT::Frame frame;
     EXPECT_CALL(*_networkMock, sendFrame(_)).WillOnce(SaveArg<0>(&frame));
@@ -338,7 +330,7 @@ TEST_F(ClientTest, disconnectSendsDisconnectMessageAndNetworkDisconnect_Test)
 // todo: verify pingreq sent from client, will require timer interface and mock
 
 // todo: this shouldn't emit connected until connect packet received
-TEST_F(ClientTest, networkConnectEmitsConnectedSignal_Test)
+TEST_F(ClientTest, networkConnectedEmitsConnectedSignal_Test)
 {
     EXPECT_CALL(*_networkMock, sendFrame(_));
     QSignalSpy spy(_client.data(), &QMQTT::Client::connected);
